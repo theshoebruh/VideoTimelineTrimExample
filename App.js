@@ -1,3 +1,5 @@
+import MultiSlider from '@ptomasroos/react-native-multi-slider';
+import {FFmpegKit, ReturnCode} from 'ffmpeg-kit-react-native';
 import React, {useState, useRef} from 'react';
 import {
   SafeAreaView,
@@ -8,7 +10,10 @@ import {
   View,
   ScrollView,
   Image,
+  TouchableOpacity,
 } from 'react-native';
+
+import RNFS from 'react-native-fs';
 
 import ImagePicker from 'react-native-image-crop-picker';
 import Video from 'react-native-video';
@@ -16,15 +21,14 @@ import FFmpegWrapper from './lib/FFmpeg';
 
 const SCREEN_WIDTH = Dimensions.get('screen').width;
 const SCREEN_HEIGHT = Dimensions.get('screen').height;
-export const FRAME_PER_SEC = 1;
+export const FRAME_PER_SEC = 0.025;
 export const FRAME_WIDTH = 80;
 const TILE_HEIGHT = 80;
 const TILE_WIDTH = FRAME_WIDTH / 2; // to get a 2x resolution
 
-const DURATION_WINDOW_DURATION = 4;
+const DURATION_WINDOW_DURATION = 30;
 const DURATION_WINDOW_BORDER_WIDTH = 4;
-const DURATION_WINDOW_WIDTH =
-  DURATION_WINDOW_DURATION * FRAME_PER_SEC * TILE_WIDTH;
+const DURATION_WINDOW_WIDTH = 150;
 const POPLINE_POSITION = '50%';
 
 const getFileNameFromPath = path => {
@@ -52,11 +56,18 @@ const getPopLinePlayTime = offset => {
   );
 };
 
+const customSlider = () => {
+  return <Image source={require('./slider.png')} />;
+};
+
 const App = () => {
   const [selectedVideo, setSelectedVideo] = useState(); // {uri: <string>, localFileName: <string>, creationDate: <Date>}
   const [frames, setFrames] = useState(); // <[{status: <FRAME_STATUS>, uri: <string>}]>
   const [framesLineOffset, setFramesLineOffset] = useState(0); // number
   const [paused, setPaused] = useState(false);
+  const [multiSliderValue, setMutliSliderValue] = useState([3, 7]);
+
+  const multiSliderValuesChange = values => setMutliSliderValue(values);
 
   const videoPlayerRef = useRef();
 
@@ -120,6 +131,24 @@ const App = () => {
     }
   };
 
+  const handleCropVideo = () => {
+    console.log(RNFS.DocumentDirectoryPath);
+
+    FFmpegKit.execute(
+      `-i ${selectedVideo.uri} -ss 00:00:10 -t 00:00:40 -c:v copy -c:a copy ${RNFS.DocumentDirectoryPath}/output6.MOV`,
+    ).then(async session => {
+      const returnCode = await session.getReturnCode();
+
+      if (ReturnCode.isSuccess(returnCode)) {
+        console.log('success');
+      } else if (ReturnCode.isCancel(returnCode)) {
+        console.log('cancel');
+      } else {
+        console.log('error');
+      }
+    });
+  };
+
   const renderFrame = (frame, index) => {
     if (frame.status === FRAME_STATUS.LOADING.name.description) {
       return <View style={styles.loadingFrame} key={index} />;
@@ -128,11 +157,7 @@ const App = () => {
         <Image
           key={index}
           source={{uri: 'file://' + frame.uri}}
-          style={{
-            width: TILE_WIDTH,
-            height: TILE_HEIGHT,
-            zIndex: 10,
-          }}
+          style={styles.imageStyling}
           onLoad={() => {
             console.log('Image loaded');
           }}
@@ -149,7 +174,7 @@ const App = () => {
             <Video
               ref={videoPlayerRef}
               style={styles.video}
-              resizeMode={'cover'}
+              resizeMode={'contain'}
               source={{uri: selectedVideo.uri}}
               repeat={true}
               paused={paused}
@@ -187,13 +212,42 @@ const App = () => {
               </ScrollView>
             </View>
           )}
+          <TouchableOpacity
+            style={styles.cropContainer}
+            onPress={handleCropVideo}>
+            <Text>crop</Text>
+          </TouchableOpacity>
         </>
       ) : (
-        <Pressable
-          style={styles.buttonContainer}
-          onPress={handlePressSelectVideoButton}>
-          <Text style={styles.buttonText}>Select a video</Text>
-        </Pressable>
+        <>
+          <Pressable
+            style={styles.buttonContainer}
+            onPress={handlePressSelectVideoButton}>
+            <Text style={styles.buttonText}>Select a video</Text>
+          </Pressable>
+          <ScrollView>
+            <MultiSlider
+              values={[multiSliderValue[0], multiSliderValue[1]]}
+              sliderLength={200}
+              onValuesChange={multiSliderValuesChange}
+              min={2}
+              max={8}
+              step={1}
+              allowOverlap={false}
+              customMarker={customSlider}
+              snapped={false}
+              selectedStyle={{
+                borderColor: 'white',
+                borderWidth: 2,
+                opacity: 0.01,
+              }}
+              trackStyle={{
+                height: 40,
+                opacity: 0.5,
+              }}
+            />
+          </ScrollView>
+        </>
       )}
     </SafeAreaView>
   );
@@ -204,6 +258,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  imageStyling: {
+    width: TILE_WIDTH,
+    height: TILE_HEIGHT,
+    zIndex: 10,
   },
   buttonContainer: {
     backgroundColor: '#000',
@@ -230,6 +289,14 @@ const styles = StyleSheet.create({
     height: TILE_HEIGHT + DURATION_WINDOW_BORDER_WIDTH * 2,
     justifyContent: 'center',
     zIndex: 10,
+  },
+  cropContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    width: 80,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   durationWindow: {
     width: DURATION_WINDOW_WIDTH,

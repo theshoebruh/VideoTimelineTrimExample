@@ -382,12 +382,12 @@ PODS:
     - React-perflogger (= 0.70.6)
   - RNFS (2.20.0):
     - React-Core
-  - RNImageCropPicker (0.38.1):
+  - RNImageCropPicker (0.39.0):
     - React-Core
     - React-RCTImage
-    - RNImageCropPicker/QBImagePickerController (= 0.38.1)
+    - RNImageCropPicker/QBImagePickerController (= 0.39.0)
     - TOCropViewController
-  - RNImageCropPicker/QBImagePickerController (0.38.1):
+  - RNImageCropPicker/QBImagePickerController (0.39.0):
     - React-Core
     - React-RCTImage
     - TOCropViewController
@@ -611,7 +611,7 @@ SPEC CHECKSUMS:
   React-runtimeexecutor: 15437b576139df27635400de0599d9844f1ab817
   ReactCommon: 349be31adeecffc7986a0de875d7fb0dcf4e251c
   RNFS: 4ac0f0ea233904cb798630b3c077808c06931688
-  RNImageCropPicker: 648356d68fbf9911a1016b3e3723885d28373eda
+  RNImageCropPicker: 14fe1c29298fb4018f3186f455c475ab107da332
   SocketRocket: fccef3f9c5cedea1353a9ef6ada904fde10d6608
   TOCropViewController: edfd4f25713d56905ad1e0b9f5be3fbe0f59c863
   Yoga: 99caf8d5ab45e9d637ee6e0174ec16fbbb01bcfc
